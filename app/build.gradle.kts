@@ -53,7 +53,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.compose.material)
-    implementation(libs.coil.compose)
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
 
     // Add the Accompanist Pager library
     implementation(libs.accompanist.pager)

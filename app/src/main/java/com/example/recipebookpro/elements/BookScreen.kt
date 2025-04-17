@@ -48,6 +48,7 @@ fun FindRecipeScreen(recipes: List<Recipe>, onSearch: (String) -> Unit) {
 // Coil dependency if not added yet
 // implementation("io.coil-kt:coil-compose:2.4.0")
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -72,9 +73,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.myapplication.R
 import com.example.recipebookpro.data.Recipe
 import com.example.recipebookpro.spoonacular.RecipeViewModel
 
@@ -120,23 +124,36 @@ fun FindRecipeScreen() {
 
 @Composable
 fun RecipeItem(recipe: Recipe) {
+    // Use a fallback URL if the imageUrl is null or blank
+    val imageUrl = recipe.image?.takeIf { it.isNotBlank() }
+        ?: "https://dummyimage.com/312x231/cccccc/000000&text=No+Image" // Fallback to a placeholder
+
+    Log.d("Mapping", "Calories: ${recipe.calories}")
+
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
         AsyncImage(
-            model = if (recipe.imageResId.isNotBlank()) recipe.imageResId else "https://via.placeholder.com/312x231", // Fallback
-            contentDescription = recipe.name,
+            model = imageUrl,
+            contentDescription = recipe.title,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(80.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(8.dp)),
+            placeholder = painterResource(id = R.drawable.placeholder),  // Optional: local placeholder
+            error = painterResource(id = R.drawable.error_image)         // Optional: local error image
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column {
-            Text(text = recipe.name, style = MaterialTheme.typography.titleMedium)
-            Text(text = "Prep Time: ${recipe.prepTime}", style = MaterialTheme.typography.bodySmall)
+            Text(text = recipe.title, style = MaterialTheme.typography.titleMedium)
+            Text(text = "Prep Time: ${recipe.readyInMinutes} minutes", style = MaterialTheme.typography.bodySmall)
             Text(text = "Calories: ${recipe.calories}", style = MaterialTheme.typography.bodySmall)
+
         }
     }
 }
+
+
