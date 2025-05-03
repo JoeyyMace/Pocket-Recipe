@@ -44,6 +44,7 @@ import com.example.recipebookpro.nav.ProfileScreen
 import com.example.recipebookpro.spoonacular.RecipeViewModel
 import com.example.recipebookpro.spoonacular.RecipeViewModelFactory
 import com.example.recipebookpro.RecipeApp
+import com.example.recipebookpro.elements.GroceryListScreen
 import com.example.recipebookpro.ui.theme.RecipeBookProTheme
 import kotlinx.coroutines.launch
 
@@ -150,7 +151,7 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("profile") { ProfileScreen() }
                     composable("recipes") { MyRecipeScreen(viewModel = recipeViewModel) } // Pass recipeViewModel
-                    composable("grocery list") { GroceryList() }
+                    composable("grocery list") { GroceryListScreen(viewModel = recipeViewModel) }
                 }
             }
         }

@@ -2,6 +2,7 @@ package com.example.recipebookpro.elements
 
 import android.util.Log
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,7 +31,7 @@ fun MyRecipeScreen(viewModel: RecipeViewModel) {
     val myRecipes by viewModel.myRecipes.observeAsState(emptyList())
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    Log.d("MyRecipeScreen", "myRecipes: $myRecipes") // Log for debugging
+    val expandedRecipes by viewModel.expandedRecipes.observeAsState(emptyMap())
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -48,13 +49,37 @@ fun MyRecipeScreen(viewModel: RecipeViewModel) {
                     )
                 } else {
                     LazyColumn {
-                        items(myRecipes) { recipe ->
-                            RecipeItem(
-                                recipe = recipe,
-                                onAddClick = { viewModel.removeRecipe(recipe) },
-                                buttonText = "Remove"  // Change button text to "Remove" for MyRecipeScreen
-                            )
-                            HorizontalDivider()
+                        items(myRecipes, key = { it.id }) { recipe ->
+                            val fullRecipe = expandedRecipes[recipe.id] ?: recipe
+
+                            Column {
+                                RecipeItem(
+                                    recipe = recipe,
+                                    onAddClick = {
+                                        viewModel.removeRecipe(fullRecipe)
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Recipe Removed")
+                                        }
+                                    },
+                                    buttonText = "Remove"
+                                )
+                                Button(
+                                    onClick = {
+                                        // Add ingredients of the recipe to the grocery list
+                                        viewModel.addRecipeToGroceryList(recipe)
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Added ingredients to Grocery List")
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.End)
+                                        .padding(end = 16.dp, top = 4.dp)
+                                ) {
+                                    Text("Add to Grocery List")
+                                }
+
+                                HorizontalDivider()
+                            }
                         }
                     }
                 }
@@ -79,6 +104,7 @@ fun MyRecipeScreen(viewModel: RecipeViewModel) {
         }
     )
 }
+
 
 
 

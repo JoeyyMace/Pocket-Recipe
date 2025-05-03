@@ -1,6 +1,7 @@
 package com.example.recipebookpro.spoonacular
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -29,6 +30,11 @@ class RecipeViewModel(private val recipeDao: RecipeDao) : ViewModel() {
     private val _expandedRecipes = MutableLiveData<Map<Int, Recipe>>(emptyMap())
     val expandedRecipes: LiveData<Map<Int, Recipe>> get() = _expandedRecipes
 
+    private val _groceryListIngredients = MutableLiveData<Set<String>>(setOf()) // Using Set to avoid duplicates
+    val groceryListIngredients: LiveData<Set<String>> = _groceryListIngredients
+
+    val isLoading = MutableLiveData(false)
+
     fun addRecipe(recipe: Recipe) {
         viewModelScope.launch {
             recipeDao.insert(recipe.toEntity())
@@ -48,7 +54,22 @@ class RecipeViewModel(private val recipeDao: RecipeDao) : ViewModel() {
         }
     }
 
-    fun loadRecipesFromDatabase() {
+    fun addRecipeToGroceryList(recipe: Recipe) {
+        // Get current list of ingredients (avoid duplicates)
+        val currentIngredients = _groceryListIngredients.value ?: emptySet()
+
+        // Handle the nullable List<String> safely
+        val newIngredients = recipe.ingredients?.filter { it.isNotEmpty() }?.map { it.trim() } ?: emptyList()
+
+        // Update the ingredients list
+        _groceryListIngredients.value = currentIngredients + newIngredients
+    }
+
+    fun clearGroceryList() {
+        _groceryListIngredients.value = emptySet()
+    }
+
+    private fun loadRecipesFromDatabase() {
         viewModelScope.launch {
             recipeDao.getAllRecipes()
                 .collect { recipeEntities ->
@@ -60,6 +81,7 @@ class RecipeViewModel(private val recipeDao: RecipeDao) : ViewModel() {
 
     fun searchRecipes(query: String) {
         val apiKey = BuildConfig.API_KEY
+        isLoading.value = true // Set loading to true when the search starts
         viewModelScope.launch {
             try {
                 val searchResponse = RetrofitInstance.api.searchRecipes(query, apiKey)
@@ -78,9 +100,12 @@ class RecipeViewModel(private val recipeDao: RecipeDao) : ViewModel() {
                 _recipes.postValue(recipeList)
             } catch (e: Exception) {
                 Log.e("API_ERROR", "Failed to fetch recipes", e)
+            } finally {
+                isLoading.value = false // Set loading to false once the API call is finished (either success or failure)
             }
         }
     }
+
 
     fun fetchFullRecipeDetails(recipeId: Int, onRecipeFetched: (Recipe) -> Unit) {
         val apiKey = BuildConfig.API_KEY
