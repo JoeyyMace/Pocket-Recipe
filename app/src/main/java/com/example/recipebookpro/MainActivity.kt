@@ -29,18 +29,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.recipebookpro.elements.FindRecipeScreen
+import com.example.recipebookpro.elements.MyRecipeScreen
+import com.example.recipebookpro.elements.SettingsScreen
 import com.example.recipebookpro.nav.DrawerContent
 import com.example.recipebookpro.nav.GroceryList
 import com.example.recipebookpro.nav.HomeScreen
 import com.example.recipebookpro.nav.ProfileScreen
-import com.example.recipebookpro.nav.RecipesScreen
-import com.example.recipebookpro.nav.SettingsScreen
 import com.example.recipebookpro.spoonacular.RecipeViewModel
+import com.example.recipebookpro.spoonacular.RecipeViewModelFactory
+import com.example.recipebookpro.RecipeApp
 import com.example.recipebookpro.ui.theme.RecipeBookProTheme
 import kotlinx.coroutines.launch
 
@@ -50,17 +53,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize DAO and ViewModel
+        val dao = RecipeApp.database.recipeDao()
+        val factory = RecipeViewModelFactory(dao)
+        recipeViewModel = ViewModelProvider(this, factory)[RecipeViewModel::class.java]
+
         setContent {
             RecipeBookProTheme {
-                MainLayout()
+                // You can pass viewModel to MainLayout if needed
+                MainLayout(recipeViewModel)
             }
         }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun MainLayout() {
-        recipeViewModel = viewModel() // Getting the ViewModel instance
+    fun MainLayout(viewmodel: RecipeViewModel) {
+        // Declare ViewModels
+        val recipeViewModel: RecipeViewModel = viewModel()
+        // NavController and DrawerState
         val navController = rememberNavController()
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
@@ -132,15 +144,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.padding(padding)
                 ) {
                     composable("home") { HomeScreen() }
-
-                    // Removed the search bar and search logic from here
-                    composable("book") {
-                        FindRecipeScreen() // Now only calling FindRecipeScreen without the search bar
+                    composable("book") { FindRecipeScreen(viewModel = recipeViewModel) }
+                    composable("settings") {
+                        SettingsScreen()
                     }
-
-                    composable("settings") { SettingsScreen() }
                     composable("profile") { ProfileScreen() }
-                    composable("recipes") { RecipesScreen() }
+                    composable("recipes") { MyRecipeScreen(viewModel = recipeViewModel) } // Pass recipeViewModel
                     composable("grocery list") { GroceryList() }
                 }
             }

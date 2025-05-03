@@ -15,25 +15,12 @@ fun HomeScreen() {
 }
 
 @Composable
-fun SettingsScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Settings Screen")
-    }
-}
-
-@Composable
 fun ProfileScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text("Profile Screen")
     }
 }
 
-@Composable
-fun RecipesScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Recipes Screen")
-    }
-}
 
 @Composable
 fun GroceryList() {

@@ -1,54 +1,7 @@
 package com.example.recipebookpro.elements
 
-/*
-@OptIn(ExperimentalPagerApi::class)
-@Composable
-fun FindRecipeScreen(recipes: List<Recipe>, onSearch: (String) -> Unit) {
-    val pagerState = rememberPagerState()
-
-    if (recipes.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Text(
-                text = "No recipes available.",
-                modifier = Modifier.align(Alignment.Center),
-                textAlign = TextAlign.Center
-            )
-        }
-
-    } else {
-        HorizontalPager(
-            count = recipes.size,
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) { page ->
-            val recipe = recipes[page]
-
-            Column(modifier = Modifier.fillMaxSize()) {
-                Image(
-                    painter = rememberAsyncImagePainter(recipe.imageResId),
-                    contentDescription = "Recipe Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .border(1.dp, Color.Black)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // Name Text, Prep Time, Calories, Ingredients as before
-                }
-            }
-        }
-    }
-} */
-
-// Coil dependency if not added yet
-// implementation("io.coil-kt:coil-compose:2.4.0")
-
-import android.util.Log
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -71,6 +24,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -83,16 +37,12 @@ import com.example.recipebookpro.data.Recipe
 import com.example.recipebookpro.spoonacular.RecipeViewModel
 
 @Composable
-fun FindRecipeScreen() {
-    // Get the ViewModel using the viewModel() function
-    val viewModel: RecipeViewModel = viewModel()
-
-    // Observe the recipes from the ViewModel
+fun FindRecipeScreen(viewModel: RecipeViewModel) {
     val recipes by viewModel.recipes.observeAsState(emptyList())
+    val expandedRecipes by viewModel.expandedRecipes.observeAsState(emptyMap())
     var searchQuery by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.padding(16.dp)) {
-        // Search TextField
         TextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -100,9 +50,7 @@ fun FindRecipeScreen() {
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Search Button
         Button(onClick = {
-            // Call the ViewModel's searchRecipes method
             viewModel.searchRecipes(searchQuery)
         }) {
             Text("Search")
@@ -110,11 +58,81 @@ fun FindRecipeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Display recipes
         LazyColumn {
             items(recipes) { recipe ->
-                RecipeItem(recipe)
+                val fullRecipe = expandedRecipes[recipe.id] ?: recipe
+
+                RecipeItem(
+                    recipe = fullRecipe,
+                    onAddClick = { viewModel.addRecipe(fullRecipe) },
+                    buttonText = "Add",
+                    onExpand = {
+                        // Only fetch if not already expanded
+                        if (expandedRecipes[recipe.id] == null) {
+                            viewModel.fetchFullRecipeDetails(recipe.id) {}
+                        }
+                    }
+                )
                 HorizontalDivider()
+            }
+        }
+    }
+}
+
+@Composable
+fun RecipeItem(
+    recipe: Recipe,
+    onAddClick: (Recipe) -> Unit,
+    onExpand: () -> Unit = {},
+    buttonText: String = "Add"  // Add buttonText parameter
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    val imageUrl = recipe.image?.takeIf { it.isNotBlank() }
+        ?: "https://dummyimage.com/312x231/cccccc/000000&text=No+Image"
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                isExpanded = !isExpanded
+                if (isExpanded) onExpand() // Trigger full fetch on expand
+            }
+            .padding(8.dp)
+            .animateContentSize()
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = recipe.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                placeholder = painterResource(id = R.drawable.placeholder),
+                error = painterResource(id = R.drawable.error_image)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(text = recipe.title, style = MaterialTheme.typography.titleMedium)
+                Text(text = "Prep Time: ${recipe.readyInMinutes} minutes", style = MaterialTheme.typography.bodySmall)
+                Text(text = "Calories: ${recipe.calories}", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        if (isExpanded) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Ingredients:", style = MaterialTheme.typography.titleSmall)
+            recipe.ingredients?.forEach { ingredient ->
+                Text(text = "- $ingredient", style = MaterialTheme.typography.bodySmall)
+            }
+            Button(
+                onClick = { onAddClick(recipe) },
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text(buttonText)  // Use buttonText here
             }
         }
     }
@@ -122,38 +140,7 @@ fun FindRecipeScreen() {
 
 
 
-@Composable
-fun RecipeItem(recipe: Recipe) {
-    // Use a fallback URL if the imageUrl is null or blank
-    val imageUrl = recipe.image?.takeIf { it.isNotBlank() }
-        ?: "https://dummyimage.com/312x231/cccccc/000000&text=No+Image" // Fallback to a placeholder
-
-    Log.d("Mapping", "Calories: ${recipe.calories}")
 
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = recipe.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            placeholder = painterResource(id = R.drawable.placeholder),  // Optional: local placeholder
-            error = painterResource(id = R.drawable.error_image)         // Optional: local error image
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(text = recipe.title, style = MaterialTheme.typography.titleMedium)
-            Text(text = "Prep Time: ${recipe.readyInMinutes} minutes", style = MaterialTheme.typography.bodySmall)
-            Text(text = "Calories: ${recipe.calories}", style = MaterialTheme.typography.bodySmall)
-
-        }
-    }
-}
 
 

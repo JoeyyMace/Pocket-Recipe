@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    kotlin("kapt")
 }
 
 android {
@@ -53,8 +54,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.compose.material)
-    implementation("io.coil-kt:coil-compose:2.4.0")
-
+    implementation(libs.coil.compose.v240)
+    implementation (libs.kotlinx.coroutines.android.v160)
 
     // Add the Accompanist Pager library
     implementation(libs.accompanist.pager)
@@ -64,6 +65,9 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.benchmark.macro)
 
+    // Room Database library
+    implementation(libs.androidx.room.runtime)
+    kapt(libs.androidx.room.compiler) // Add this line for Room compiler
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -73,3 +77,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
