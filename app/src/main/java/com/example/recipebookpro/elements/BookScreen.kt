@@ -1,6 +1,7 @@
 package com.example.recipebookpro.elements
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +25,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -32,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -60,16 +65,41 @@ fun FindRecipeScreen(viewModel: RecipeViewModel) {
             .padding(16.dp)
             .padding(paddingValues)) {
 
+            var isFocused by remember { mutableStateOf(false) }
+
             TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 label = { Text("Search Recipes") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 2.dp,
+                        color = if (isFocused) Color.Black else Color.Black.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(16.dp)
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFFFDDAA),
+                    unfocusedContainerColor = Color(0xFFFFF3E0),
+                    focusedLabelColor = Color.Black,
+                    cursorColor = Color.Black,
+                    focusedTextColor = Color.Black,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
 
-            Button(onClick = {
-                viewModel.searchRecipes(searchQuery)
-            }) {
+
+            Button(
+                onClick = {
+                    viewModel.searchRecipes(searchQuery)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFDDAA),
+                    contentColor = Color.Black         // White text
+                )
+            ) {
                 Text("Search")
             }
 
@@ -84,14 +114,14 @@ fun FindRecipeScreen(viewModel: RecipeViewModel) {
 
                         RecipeItem(
                             recipe = fullRecipe,
-                            onAddClick = {
-                                viewModel.addRecipe(fullRecipe)
+                            isAddButton = true,  // Using the new parameter to specify it's an add button
+                            onButtonClick = { addedRecipe ->  // Using the single callback approach
+                                viewModel.addRecipe(addedRecipe)
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar("Recipe Added")
                                 }
                             },
                             buttonText = "Add",
-                            onRemoveClick = {},
                             onExpand = {
                                 if (expandedRecipes[recipe.id] == null) {
                                     viewModel.fetchFullRecipeDetails(recipe.id) {}
@@ -109,8 +139,8 @@ fun FindRecipeScreen(viewModel: RecipeViewModel) {
 @Composable
 fun RecipeItem(
     recipe: Recipe,
-    onAddClick: ((Recipe) -> Unit)? = null,
-    onRemoveClick: ((Recipe) -> Unit)? = null,
+    isAddButton: Boolean = true,
+    onButtonClick: ((Recipe) -> Unit)? = null,
     buttonText: String = "Add",
     onExpand: () -> Unit = {}
 ) {
@@ -159,12 +189,17 @@ fun RecipeItem(
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Instructions:", style = MaterialTheme.typography.titleSmall)
             InstructionText(recipe.instructions ?: "No instructions provided.")
+
+            // Action button
+            val buttonColor = if (isAddButton) Color.Green.copy(alpha = 0.5f) else Color.Red.copy(alpha = 0.5f)
+
             Button(
-                onClick = {
-                    onAddClick?.invoke(recipe)
-                    onRemoveClick?.invoke(recipe)
-                },
-                modifier = Modifier.padding(top = 8.dp)
+                onClick = { onButtonClick?.invoke(recipe) },
+                modifier = Modifier.padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = buttonColor,
+                    contentColor = Color.Black
+                )
             ) {
                 Text(buttonText)
             }

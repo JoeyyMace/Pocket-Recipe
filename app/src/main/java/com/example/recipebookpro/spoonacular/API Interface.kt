@@ -13,12 +13,6 @@ interface SpoonacularApi {
         @Query("query") query: String,
         @Query("apiKey") apiKey: String,
         @Query("addRecipeNutrition") addNutrition: Boolean = true,
-        @Query("cuisine") cuisine: String? = null,
-        @Query("diet") diet: String? = null,
-        @Query("intolerances") intolerances: String? = null,
-        @Query("type") type: String? = null,
-        @Query("maxReadyTime") maxReadyTime: Int? = null,
-        @Query("sort") sort: String = "popularity" // Example for sorting by popularity
     ): RecipeSearchResponse
 
     @GET("recipes/{id}/information")

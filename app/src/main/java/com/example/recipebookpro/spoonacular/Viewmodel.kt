@@ -1,7 +1,6 @@
 package com.example.recipebookpro.spoonacular
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,7 +10,6 @@ import com.example.recipebookpro.data.Recipe
 import com.example.recipebookpro.database.RecipeDao
 import com.example.recipebookpro.database.toEntity
 import com.example.recipebookpro.database.toRecipe
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class RecipeViewModel(private val recipeDao: RecipeDao) : ViewModel() {
@@ -63,6 +61,19 @@ class RecipeViewModel(private val recipeDao: RecipeDao) : ViewModel() {
 
         // Update the ingredients list
         _groceryListIngredients.value = currentIngredients + newIngredients
+    }
+
+    fun removeIngredientsFromGroceryList(ingredientsToRemove: List<String>) {
+        // Get current list of ingredients
+        val currentIngredients = _groceryListIngredients.value ?: emptySet()
+
+        // Create a new set without the ingredients to remove
+        val updatedIngredients = currentIngredients.filterNot { ingredientsToRemove.contains(it) }.toSet()
+
+        // Update the ingredients list
+        _groceryListIngredients.value = updatedIngredients
+
+        Log.d("RecipeViewModel", "Removed ${ingredientsToRemove.size} ingredients from grocery list")
     }
 
     fun clearGroceryList() {
